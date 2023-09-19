@@ -1,4 +1,12 @@
 {
+  "theme": {
+    "enabled": true,
+    "background_color": "#181a1b",
+    "text_color": "#ffffff",
+    "buttons_color":"#00aaff"
+  
+  },
+
     "retailers": [
       {
         "name": "Tesco",
@@ -54,6 +62,9 @@
         "enabled": false,
         "num_tiles_to_search": 10
       }
+      
     ]
+    
+    
   }
   
