@@ -1,6 +1,19 @@
 import sys
 import threading
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QTextEdit, QPushButton, QRadioButton, QButtonGroup
+from PyQt5.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QRadioButton,
+    QLabel,
+    QLineEdit,
+    QTextEdit,
+    QPushButton,
+    QButtonGroup,
+)
+from PyQt5.QtGui import QPalette, QColor
 from bs4 import BeautifulSoup
 import time
 from selenium import webdriver
@@ -16,14 +29,29 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from retailers_links import retailersFile
 from input_validation import get_integer_input
 from browers_choice import initialize_driver
-
+from theme_changer import read_theme_settings
     
 class MyApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.init_ui()
-        self.scraping_thread = None
-        
+        theme_mode, background_color, text_color, buttons_color = read_theme_settings("config.json")
+
+        # Set background color for the entire application
+        palette = QPalette()
+        palette.setColor(QPalette.Window, QColor(background_color))
+        self.setPalette(palette)
+
+        # Apply text color to various elements
+        self.product_label.setStyleSheet(f"color: {text_color};")
+        self.scraper_output_label.setStyleSheet(f"color: {text_color};")
+        self.start_button.setStyleSheet(f"color: {text_color}; background-color: {buttons_color};")
+        self.stop_button.setStyleSheet(f"color: {text_color}; background-color: {buttons_color};")
+        self.product_input.setStyleSheet(f"color: {text_color}; background-color: transparent;")
+        self.scraper_output.setStyleSheet(f"color: {text_color}; background-color: transparent;")
+        self.firefox_radio.setStyleSheet(f"color: {text_color};")
+        self.chrome_radio.setStyleSheet(f"color: {text_color};")
+        self.edge_radio.setStyleSheet(f"color: {text_color};")
     def init_ui(self):
         self.central_widget = QWidget(self)
         self.setCentralWidget(self.central_widget)
@@ -34,53 +62,54 @@ class MyApp(QMainWindow):
         # Browser selection radio buttons
         browser_layout = QHBoxLayout()
         self.browser_group = QButtonGroup()
-        
+
         self.firefox_radio = QRadioButton('Firefox')
         self.chrome_radio = QRadioButton('Chrome')
         self.edge_radio = QRadioButton('Edge')
-        
+
         self.browser_group.addButton(self.firefox_radio, 1)
         self.browser_group.addButton(self.chrome_radio, 2)
         self.browser_group.addButton(self.edge_radio, 3)
-        
+
         browser_layout.addWidget(self.firefox_radio)
         browser_layout.addWidget(self.chrome_radio)
         browser_layout.addWidget(self.edge_radio)
-        
+
         layout.addLayout(browser_layout)
 
         # Product label and input field
-        product_layout = QHBoxLayout()
-        product_label = QLabel('Product:')
+        self.product_layout = QHBoxLayout()
+        self.product_label = QLabel('Product:')
         self.product_input = QLineEdit()
-        product_layout.addWidget(product_label)
-        product_layout.addWidget(self.product_input)
-        layout.addLayout(product_layout)
-        
+        self.product_layout.addWidget(self.product_label)
+        self.product_layout.addWidget(self.product_input)
+        layout.addLayout(self.product_layout)
+
         # Scraper output label and text area
-        scraper_output_layout = QHBoxLayout()
-        scraper_output_label = QLabel('Scraper Output:')
+        self.scraper_output_layout = QHBoxLayout()
+        self.scraper_output_label = QLabel('Scraper Output:')
         self.scraper_output = QTextEdit()
-        scraper_output_layout.addWidget(scraper_output_label)
-        scraper_output_layout.addWidget(self.scraper_output)
-        layout.addLayout(scraper_output_layout)
+        self.scraper_output_layout.addWidget(self.scraper_output_label)
+        self.scraper_output_layout.addWidget(self.scraper_output)
+        layout.addLayout(self.scraper_output_layout)
 
         # Start button
         self.start_button = QPushButton('Start')
         self.start_button.clicked.connect(self.start_scraper)
         layout.addWidget(self.start_button)
-        
+
         # Stop button
         self.stop_button = QPushButton('Stop')
         self.stop_button.clicked.connect(self.stop_scraper)
         layout.addWidget(self.stop_button)
-        
+
         # Apply layout to central widget
         self.central_widget.setLayout(layout)
 
         self.setWindowTitle('CoolyerScraper GUI')
         self.setGeometry(100, 100, 600, 400)
 
+        
    
     def stop_scraper(self):
         # Set scraping flag to False
@@ -106,7 +135,8 @@ class MyApp(QMainWindow):
 
         # Re-enable the start button after scraping is complete
         self.start_button.setEnabled(True)
-        print(f"{browser_choice}")
+        # Used for debugging
+        #print(f"{browser_choice}")
             
     def scrape_and_update_ui(self, browser_choice, product_name):
         try:
@@ -129,7 +159,6 @@ class MyApp(QMainWindow):
                     time.sleep(webWaitTime)
                     # Parse the HTML source of the web page using BeautifulSoup
                     soup = BeautifulSoup(driver.page_source, 'html.parser')
-                    #self.scraper_output.append = (f"Scraping {retailer}")
                     print(f"Scraping: {retailer}")     
                     
                     # Scrape the data for each retailer using different CSS selectors or XPath expressions
@@ -171,9 +200,8 @@ class MyApp(QMainWindow):
                                     else:
                                         product_data[retailer] += (f"|Tile {index + 1} - Name: {name}, Price: {price} {pricePerMil}|\n")
                                 except Exception as e:
-                                        print("Error parsing")
+                                        print("Error parsing tile:", str(e))
                                     # Add an error handler or continue based on your needs
-                            
                         except Exception as e:
                             print(f"{retailer} error: {str(e)}")
 
@@ -484,12 +512,10 @@ class MyApp(QMainWindow):
             if driver:
                 self.update_ui_with_data(product_data)
                 driver.quit()
-          
-    # ... (remaining methods)
     
     def update_ui_with_data(self, product_data):
             # Update the UI with the scraped data
-            self.scraper_output.setPlainText("Scraped Data:\n")
+            self.scraper_output.setPlainText("It will freeze the program\nScraped Data:\n")
             for retailer, data in product_data.items():
                 self.scraper_output.append(f"Retailer: {retailer}\n{data}\n")  
 def main():
