@@ -13,23 +13,20 @@ def initialize_driver(browser_choice):
             # Firefox
             options = webdriver.FirefoxOptions()
             options.headless = True
-            options.add_argument("--headless")
             print("Starting Firefox")
             driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()), options=options)
         elif browser_choice == 2:
             # Chrome
             options = webdriver.ChromeOptions()
-            options.headless = True
-            options.add_argument("--headless")
+            options.add_argument('--headless=new')
             driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
         elif browser_choice == 3:
             # Microsoft Edge
             options = webdriver.EdgeOptions()
             options.use_chromium = True
-            options.headless = True
-            options.add_argument("--headless")
+            options.add_argument ("--headless=new")
             driver = webdriver.Edge(service=EdgeService(EdgeChromiumDriverManager().install()), options=options)
-            print("Starting Edge\nCurrently undergoing improvements, including resolving errors and enhancing compatibility with certain websites.")
+            print ("Starting Edge\nCurrently undergoing improvements, including resolving errors and enhancing compatibility with certain websites.")
         else:
             print(f"{browser_choice}")
             raise ValueError("Invalid browser choice")
