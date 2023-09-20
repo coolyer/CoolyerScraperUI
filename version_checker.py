@@ -32,13 +32,23 @@ def check_for_updates(parent_widget):
                     msg.setText(f'CoolyerScraper is up to date.\nYou are using version:\n{CURRENT_VERSION}')
                     msg.setStandardButtons(QMessageBox.Ok)
                     msg.exec_()
+                if CURRENT_VERSION > latest_version:
+                    msg = QMessageBox()
+                    msg.setIcon(QMessageBox.Information)
+                    msg.setWindowTitle("Information")
+                    msg.setText(f'Whoopsie-doodle! Looks like someone could not resist playing with CoolyerScraper version.txt. 😄Just so you know, youre currently strutting your stuff with this version: {CURRENT_VERSION}. Keep it cool and scrape on!')
+                    msg.setStandardButtons(QMessageBox.Ok)
+                    msg.exec_()
         except Exception as e:
             QMessageBox.critical(parent_widget, 'Error', f"An error occurred while checking for updates: {str(e)}")
             
-def version_check():
-    msg = QMessageBox()
-    msg.setIcon(QMessageBox.Information)
-    msg.setWindowTitle("Information")
-    msg.setText(f'You are using version:\n{CURRENT_VERSION}')
-    msg.setStandardButtons(QMessageBox.Ok)
-    msg.exec_()
+def version_check(parent_widget):
+    try:    
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setWindowTitle("Information")
+        msg.setText(f'You are using version:\n{CURRENT_VERSION}')
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
+    except Exception as e:
+            QMessageBox.critical(parent_widget, 'Error', f"An error occurred while checking for updates: {str(e)}")
