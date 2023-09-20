@@ -11,7 +11,8 @@ from PyQt5.QtWidgets import (
     QTextEdit,
     QPushButton,
     QButtonGroup,
-    QMessageBox
+    QMessageBox,
+    QAction
 )
 from PyQt5.QtGui import QPalette, QColor
 from bs4 import BeautifulSoup
@@ -26,6 +27,7 @@ from selenium.common.exceptions import WebDriverException
 from retailers_links import retailersFile
 from browers_choice import initialize_driver
 from theme_changer import read_theme_settings
+from version_checker import check_for_updates, version_check
     
 class MyApp(QMainWindow):
     def __init__(self):
@@ -50,6 +52,29 @@ class MyApp(QMainWindow):
         self.edge_radio.setStyleSheet(f"color: {text_color}; font-size: {text_size}; font-family: {font_style}")
         
     def init_ui(self):
+        
+        # MenuBar
+        menubar = self.menuBar()
+
+        # Create an 'Options' menu with 'Check for Updates', 'About' and 'Exit' actions
+        options_menu = menubar.addMenu('Options')
+
+        check_for_updates_action = QAction('Check for Updates', self)
+        check_for_updates_action.triggered.connect(lambda:check_for_updates(self))
+
+        # Add the action to the 'Options' menu
+        options_menu.addAction(check_for_updates_action)
+
+        about_action = QAction('About',self)
+        about_action.triggered.connect(lambda:version_check(self))
+        options_menu.addAction(about_action)
+        
+        exit_action = QAction('Exit', self)
+        exit_action.triggered.connect(self.close)
+        options_menu.addAction(exit_action)
+
+        
+        
         self.central_widget = QWidget(self)
         self.setCentralWidget(self.central_widget)
 
@@ -108,19 +133,21 @@ class MyApp(QMainWindow):
 
         self.setWindowTitle('CoolyerScraper GUI')
         self.setGeometry(100, 100, 600, 400)
-    
+
     
     def start_scraper(self, from_enter=False):
         # Get the selected browser choice
         browser_choice = self.browser_group.checkedId()
         
         if browser_choice == -1:
+            self.scraper_output.clear()
             self.scraper_output.append("Please choose a browser")
             return  # Exit the function if no browser is selected
         
         product_name = self.product_input.text()
     
         if not product_name:
+            self.scraper_output.clear()
             self.scraper_output.append("Please enter a product name")
             return  # Exit the function if the product name is empty
         # Disable the start button while scraping is in progress
