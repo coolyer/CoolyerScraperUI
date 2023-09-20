@@ -17,15 +17,12 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPalette, QColor
 from bs4 import BeautifulSoup
 import time
-from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
-from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 # Use to clean the code
 from retailers_links import retailersFile
 from input_validation import get_integer_input
@@ -36,7 +33,7 @@ class MyApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.init_ui()
-        theme_mode, background_color, text_color, buttons_color = read_theme_settings("config.json")
+        theme_mode, background_color, text_color, buttons_color, text_size, font_style = read_theme_settings("config.json")
 
         # Set background color for the entire application
         palette = QPalette()
@@ -44,15 +41,15 @@ class MyApp(QMainWindow):
         self.setPalette(palette)
 
         # Apply text color to various elements
-        self.product_label.setStyleSheet(f"color: {text_color};")
-        self.scraper_output_label.setStyleSheet(f"color: {text_color};")
+        self.product_label.setStyleSheet(f"color: {text_color};font-size: {text_size}; font-family: {font_style}")
+        self.scraper_output_label.setStyleSheet(f"color: {text_color}; font-size: {text_size}; font-family: {font_style}")
         self.start_button.setStyleSheet(f"color: {text_color}; background-color: {buttons_color};")
         #self.stop_button.setStyleSheet(f"color: {text_color}; background-color: {buttons_color};")
-        self.product_input.setStyleSheet(f"color: {text_color}; background-color: transparent;")
-        self.scraper_output.setStyleSheet(f"color: {text_color}; background-color: transparent;")
-        self.firefox_radio.setStyleSheet(f"color: {text_color};")
-        self.chrome_radio.setStyleSheet(f"color: {text_color};")
-        self.edge_radio.setStyleSheet(f"color: {text_color};")
+        self.product_input.setStyleSheet(f"color: {text_color}; background-color: transparent; font-size: {text_size}; font-family: {font_style}")
+        self.scraper_output.setStyleSheet(f"color: {text_color}; background-color: transparent; font-size: {text_size}; font-family: {font_style}")
+        self.firefox_radio.setStyleSheet(f"color: {text_color}; font-size: {text_size}; font-family: {font_style}")
+        self.chrome_radio.setStyleSheet(f"color: {text_color}; font-size: {text_size}; font-family: {font_style}")
+        self.edge_radio.setStyleSheet(f"color: {text_color}; font-size: {text_size}; font-family: {font_style}")
         
     def init_ui(self):
         self.central_widget = QWidget(self)
@@ -149,7 +146,7 @@ class MyApp(QMainWindow):
         
     def show_freeze_warning(self):
         # Fetch theme settings from config
-        theme_mode, background_color, text_color, button_color = read_theme_settings("config.json")
+        theme_mode, background_color, text_color, button_color, text_size, font_style = read_theme_settings("config.json")
 
         # Create and configure the message box
         self.msg = QMessageBox()
