@@ -9,16 +9,16 @@ def read_theme_settings(config_file):
         # Get the theme settings from the config
         theme_settings = config_data.get("theme", {})
         theme_mode = theme_settings.get("enabled", True)
-        background_color = theme_settings.get("background_color", "#ffffff")
-        text_color = theme_settings.get("text_color", "#000000")
+        background_color = theme_settings.get("background_color", "#181a1b")
+        text_color = theme_settings.get("text_color", "#ffffff")
         buttons_color = theme_settings.get("buttons_color", "#ffffff")
-        
-
+        text_size = theme_settings.get("text_size", "12pt")
+        font_style = theme_settings.get("font_style", "Arial")
         if not theme_mode:
             # theme_mode is False, use default colors
-            return False, "#ffffff", "#000000", "#ffffff"
+            return False, "#181a1b", "#ffffff", "#00aaff", "12pt", "Arial"
         
-        return theme_mode, background_color, text_color, buttons_color
+        return theme_mode, background_color, text_color, buttons_color, text_size, font_style
     except Exception as e:
         print(f"Error reading theme settings: {str(e)}")
-        return False, "#ffffff", "#000000", "#ffffff"
+        return False, "#181a1b", "#ffffff", "#00aaff", "12pt", "Arial"

@@ -3,7 +3,9 @@
     "enabled": true,
     "background_color": "#181a1b",
     "text_color": "#ffffff",
-    "buttons_color":"#00aaff"
+    "buttons_color":"#00aaff",
+    "text_size":"13pt",
+    "font_style":"Ariel"
   
   },
 
