@@ -1,5 +1,4 @@
 import sys
-import threading
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -25,7 +24,6 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import WebDriverException
 # Use to clean the code
 from retailers_links import retailersFile
-from input_validation import get_integer_input
 from browers_choice import initialize_driver
 from theme_changer import read_theme_settings
     

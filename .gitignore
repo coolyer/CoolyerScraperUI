@@ -3,4 +3,4 @@ dist
 build
 geckodriver.log
 setup.py
-*config.json
+config.json
