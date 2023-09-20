@@ -96,9 +96,9 @@ We are dedicated to maintaining and enhancing this product scraper to meet the e
 ## Web-Based Version (Idea/soon?)
 
 
-My vision for CoolyerScraper extends beyond desktop applications. We're actively working on creating a web-based version of our product that will allow you to access and utilize our scraper directly through your web browser. With this approach, there's no need for downloads or installations. Simply visit our website, input your preferences, and let the scraping begin.
+My vision for CoolyerScraper extends beyond desktop applications. Just a idea in the works on creating a web-based version of our product that will allow you to access and utilize CoolyerScraper directly through your web browser. With this approach, there's no need for downloads or installations. Simply visit our website, input your preferences
 
-Here's a sneak peek at what you can look forward to:
+Here's a sneak peek at what will be done if made so you can look forward if its made:
 
 - Instant Access: Say goodbye to the hassle of installations. Our web-based version will be accessible instantly, saving you time and effort.
 
