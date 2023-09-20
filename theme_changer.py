@@ -14,8 +14,10 @@ def read_theme_settings(config_file):
         buttons_color = theme_settings.get("buttons_color", "#ffffff")
         text_size = theme_settings.get("text_size", "12pt")
         font_style = theme_settings.get("font_style", "Arial")
+        print("Theme enabled")
         if not theme_mode:
             # theme_mode is False, use default colors
+            print("Theme not enabled, using default colors")
             return False, "#181a1b", "#ffffff", "#00aaff", "12pt", "Arial"
         
         return theme_mode, background_color, text_color, buttons_color, text_size, font_style
