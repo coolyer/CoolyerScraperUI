@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import (
     QTextEdit,
     QPushButton,
     QButtonGroup,
+    QMessageBox
 )
 from PyQt5.QtGui import QPalette, QColor
 from bs4 import BeautifulSoup
@@ -46,12 +47,13 @@ class MyApp(QMainWindow):
         self.product_label.setStyleSheet(f"color: {text_color};")
         self.scraper_output_label.setStyleSheet(f"color: {text_color};")
         self.start_button.setStyleSheet(f"color: {text_color}; background-color: {buttons_color};")
-        self.stop_button.setStyleSheet(f"color: {text_color}; background-color: {buttons_color};")
+        #self.stop_button.setStyleSheet(f"color: {text_color}; background-color: {buttons_color};")
         self.product_input.setStyleSheet(f"color: {text_color}; background-color: transparent;")
         self.scraper_output.setStyleSheet(f"color: {text_color}; background-color: transparent;")
         self.firefox_radio.setStyleSheet(f"color: {text_color};")
         self.chrome_radio.setStyleSheet(f"color: {text_color};")
         self.edge_radio.setStyleSheet(f"color: {text_color};")
+        
     def init_ui(self):
         self.central_widget = QWidget(self)
         self.setCentralWidget(self.central_widget)
@@ -81,6 +83,7 @@ class MyApp(QMainWindow):
         self.product_layout = QHBoxLayout()
         self.product_label = QLabel('Product:')
         self.product_input = QLineEdit()
+        self.product_input.returnPressed.connect(self.start_scraper)# When enter is pressed start scraping.
         self.product_layout.addWidget(self.product_label)
         self.product_layout.addWidget(self.product_input)
         layout.addLayout(self.product_layout)
@@ -89,6 +92,7 @@ class MyApp(QMainWindow):
         self.scraper_output_layout = QHBoxLayout()
         self.scraper_output_label = QLabel('Scraper Output:')
         self.scraper_output = QTextEdit()
+        self.scraper_output.setReadOnly(True)
         self.scraper_output_layout.addWidget(self.scraper_output_label)
         self.scraper_output_layout.addWidget(self.scraper_output)
         layout.addLayout(self.scraper_output_layout)
@@ -98,46 +102,84 @@ class MyApp(QMainWindow):
         self.start_button.clicked.connect(self.start_scraper)
         layout.addWidget(self.start_button)
 
+        # TODO Make this work when threading is implemented
         # Stop button
-        self.stop_button = QPushButton('Stop')
-        self.stop_button.clicked.connect(self.stop_scraper)
-        layout.addWidget(self.stop_button)
+        #self.stop_button = QPushButton('Stop')
+        #self.stop_button.clicked.connect(self.stop_scraper)
+        #layout.addWidget(self.stop_button)
 
         # Apply layout to central widget
         self.central_widget.setLayout(layout)
 
         self.setWindowTitle('CoolyerScraper GUI')
         self.setGeometry(100, 100, 600, 400)
-
-        
-   
-    def stop_scraper(self):
-        # Set scraping flag to False
-        self.scraping = False
     
-    def start_scraper(self):
-        # Disable the start button while scraping is in progress
-        self.start_button.setEnabled(False)
+    
+    def start_scraper(self, from_enter=False):
         # Get the selected browser choice
         browser_choice = self.browser_group.checkedId()
-
+        
+        if browser_choice == -1:
+            self.scraper_output.append("Please choose a browser")
+            return  # Exit the function if no browser is selected
+        
+        product_name = self.product_input.text()
+    
+        if not product_name:
+            self.scraper_output.append("Please enter a product name")
+            return  # Exit the function if the product name is empty
+        # Disable the start button while scraping is in progress
+        self.start_button.setEnabled(False)
+        
         # Get the product name from the input field
         product_name = self.product_input.text()
 
         # Clear the scraper output
         self.scraper_output.clear()
-
+        self.show_freeze_warning()
+        
         # Set scraping flag to True
         self.scraping = True
 
         # Call the scrape_and_update_ui method in the main thread
         self.scrape_and_update_ui(browser_choice, product_name)
-
+        
         # Re-enable the start button after scraping is complete
         self.start_button.setEnabled(True)
-        # Used for debugging
-        #print(f"{browser_choice}")
-            
+        
+    def show_freeze_warning(self):
+        # Fetch theme settings from config
+        theme_mode, background_color, text_color, button_color = read_theme_settings("config.json")
+
+        # Create and configure the message box
+        self.msg = QMessageBox()
+        self.msg.setIcon(QMessageBox.Information)
+        self.msg.setWindowTitle("Information")
+        self.msg.setText("Scraping may freeze the program. Please wait.")
+        self.msg.setStandardButtons(QMessageBox.Ok)
+
+        # Set the style of the message box using the fetched color values
+        style = f"""
+            QLabel {{
+            color: {text_color};
+            }}
+            QPushButton {{
+                color: {text_color};
+                background-color: {button_color};
+            }}
+            QMessageBox {{
+                background-color: {background_color};
+            }}
+            """
+        self.msg.setStyleSheet(style)
+
+        # Execute the message box
+        self.msg.exec_()
+        
+    def stop_scraper(self):
+            # Set scraping flag to False
+            self.scraping = False
+               
     def scrape_and_update_ui(self, browser_choice, product_name):
         try:
             # Call the initialize_driver function to create the WebDriver instance
@@ -515,7 +557,7 @@ class MyApp(QMainWindow):
     
     def update_ui_with_data(self, product_data):
             # Update the UI with the scraped data
-            self.scraper_output.setPlainText("It will freeze the program\nScraped Data:\n")
+            self.scraper_output.setPlainText("Scraped Data:\n")
             for retailer, data in product_data.items():
                 self.scraper_output.append(f"Retailer: {retailer}\n{data}\n")  
 def main():
@@ -526,17 +568,10 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-         
-    
-        
+       
 def main():
     app = QApplication(sys.argv)
     window = MyApp()
     window.show()
     sys.exit(app.exec_())
     
-
-if __name__ == '__main__':
-    main()
