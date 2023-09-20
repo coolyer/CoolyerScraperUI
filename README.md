@@ -85,9 +85,30 @@ This project aims to continually improve and expand its functionality. Here are 
 -   Code Optimization: Ongoing work will focus on optimizing and refining the codebase for improved performance and efficiency.
     
 -   Increased Retailer Coverage: We aim to expand the list of supported websites, offering users access to an even broader range of online stores for price scraping.
-    
+
+-   Cross-Platform Accessibility: My goal is to ensure a seamless and user-friendly experience for all. Once we achieve this, we will embark on the journey of transforming our application into a versatile and accessible iOS and Android app.
+
+
+   
 
 We are dedicated to maintaining and enhancing this product scraper to meet the evolving needs of our users. Your feedback and suggestions are valuable to us, so please share your ideas for additional features or improvements. Together, we can make this tool even more powerful and user-friendly. Thank you for using Coolyer Scraper UI!
+
+## Web-Based Version (Idea/soon?)
+
+
+My vision for CoolyerScraper extends beyond desktop applications. We're actively working on creating a web-based version of our product that will allow you to access and utilize our scraper directly through your web browser. With this approach, there's no need for downloads or installations. Simply visit our website, input your preferences, and let the scraping begin.
+
+Here's a sneak peek at what you can look forward to:
+
+- Instant Access: Say goodbye to the hassle of installations. Our web-based version will be accessible instantly, saving you time and effort.
+
+- Cross-Platform Compatibility: Whether you're on a Windows PC, Mac, Linux, or even a mobile device, you'll be able to use CoolyerScraper from your preferred web browser.
+
+- Seamless Updates: We'll handle all updates and maintenance on our end, ensuring you always have access to the latest features and website compatibility.
+
+- User-Friendly Interface: We're designing the web-based version with user convenience in mind, making it intuitive and easy to navigate.
+
+This is just a Idea as I want to expand this and make it easy and free to use. 
 
 ## The Team
 
