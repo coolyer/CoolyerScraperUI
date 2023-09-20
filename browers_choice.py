@@ -30,7 +30,7 @@ def initialize_driver(browser_choice):
         else:
             print(f"{browser_choice}")
             raise ValueError("Invalid browser choice")
-            
+               
     except Exception as e:
         print(f"Error initializing driver: {str(e)}")
         return None  # Return None to indicate driver initialization failure
