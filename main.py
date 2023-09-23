@@ -1,4 +1,6 @@
 import sys
+import threading
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -28,7 +30,9 @@ from retailers_links import retailersFile
 from browers_choice import initialize_driver
 from theme_changer import read_theme_settings
 from version_checker import check_for_updates, version_check
-    
+
+
+
 class MyApp(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -50,7 +54,7 @@ class MyApp(QMainWindow):
         self.firefox_radio.setStyleSheet(f"color: {text_color}; font-size: {text_size}; font-family: {font_style}")
         self.chrome_radio.setStyleSheet(f"color: {text_color}; font-size: {text_size}; font-family: {font_style}")
         self.edge_radio.setStyleSheet(f"color: {text_color}; font-size: {text_size}; font-family: {font_style}")
-        
+        self.original_button_palette = self.start_button.palette()
     def init_ui(self):
         
         # MenuBar
@@ -68,6 +72,15 @@ class MyApp(QMainWindow):
         about_action = QAction('About',self)
         about_action.triggered.connect(lambda:version_check(self))
         options_menu.addAction(about_action)
+        
+    
+        
+        # Create the "Refresh Theme" QAction
+        refresh_action = QAction("Refresh Theme", self)
+        refresh_action.triggered.connect(self.refresh_theme)
+        options_menu.addAction(refresh_action)
+        
+        
         
         exit_action = QAction('Exit', self)
         exit_action.triggered.connect(self.close)
@@ -134,11 +147,24 @@ class MyApp(QMainWindow):
         self.setWindowTitle('CoolyerScraper GUI')
         self.setGeometry(100, 100, 600, 400)
 
-    
+
+    def refresh_theme(self):
+        theme_mode, background_color, text_color, buttons_color, text_size, font_style = read_theme_settings("config.json")
+        # Apply text color to various elements
+        self.product_label.setStyleSheet(f"color: {text_color};font-size: {text_size}; font-family: {font_style}")
+        self.scraper_output_label.setStyleSheet(f"color: {text_color}; font-size: {text_size}; font-family: {font_style}")
+        self.start_button.setStyleSheet(f"color: {text_color}; background-color: {buttons_color};")
+        #self.stop_button.setStyleSheet(f"color: {text_color}; background-color: {buttons_color};")
+        self.product_input.setStyleSheet(f"color: {text_color}; background-color: transparent; font-size: {text_size}; font-family: {font_style}")
+        self.scraper_output.setStyleSheet(f"color: {text_color}; background-color: transparent; font-size: {text_size}; font-family: {font_style}")
+        self.firefox_radio.setStyleSheet(f"color: {text_color}; font-size: {text_size}; font-family: {font_style}")
+        self.chrome_radio.setStyleSheet(f"color: {text_color}; font-size: {text_size}; font-family: {font_style}")
+        self.edge_radio.setStyleSheet(f"color: {text_color}; font-size: {text_size}; font-family: {font_style}")
+        
     def start_scraper(self, from_enter=False):
         # Get the selected browser choice
         browser_choice = self.browser_group.checkedId()
-        
+        print("Original Button Palette:", self.original_button_palette)
         if browser_choice == -1:
             self.scraper_output.clear()
             self.scraper_output.append("Please choose a browser")
@@ -151,62 +177,69 @@ class MyApp(QMainWindow):
             self.scraper_output.append("Please enter a product name")
             return  # Exit the function if the product name is empty
         # Disable the start button while scraping is in progress
+        self.scraping = True
         self.start_button.setEnabled(False)
-        
+        self.start_button.setText("Scraping")
+        self.start_button.setStyleSheet("background-color: #CCCCCC; color: #808080;")
         # Get the product name from the input field
         product_name = self.product_input.text()
 
         # Clear the scraper output
         self.scraper_output.clear()
-        self.show_freeze_warning()
+        #self.show_freeze_warning()
         
         # Set scraping flag to True
-        self.scraping = True
-
-        # Call the scrape_and_update_ui method in the main thread
-        self.scrape_and_update_ui(browser_choice, product_name)
         
-        # Re-enable the start button after scraping is complete
-        self.start_button.setEnabled(True)
+        # Start the thread to allow it not to stop responding.
+        self.scraper_thread = ScraperThread(browser_choice, product_name)
         
-    def show_freeze_warning(self):
-        # Fetch theme settings from config
-        theme_mode, background_color, text_color, button_color, text_size, font_style = read_theme_settings("config.json")
-
-        # Create and configure the message box
-        self.msg = QMessageBox()
-        self.msg.setIcon(QMessageBox.Information)
-        self.msg.setWindowTitle("Information")
-        self.msg.setText("Scraping may freeze the program. Please wait.")
-        self.msg.setStandardButtons(QMessageBox.Ok)
-
-        # Set the style of the message box using the fetched color values
-        style = f"""
-            QLabel {{
-            color: {text_color};
-            }}
-            QPushButton {{
-                color: {text_color};
-                background-color: {button_color};
-            }}
-            QMessageBox {{
-                background-color: {background_color};
-            }}
-            """
-        self.msg.setStyleSheet(style)
-
-        # Execute the message box
-        self.msg.exec_()
+        # The code to allow it to scrape in real time
+        self.scraper_thread.price_scraped.connect(self.update_scraper_output_with_price)
         
+        # Calls what retailer its scraping
+        self.scraper_thread.retailer_current.connect(self.retailercurrent)
+         # Connect the scraping completion signal to the handling method
+        self.scraper_thread.scraping_complete.connect(self.handle_scraping_complete)
+        self.scraper_thread.start()
+ 
+      
+    def handle_scraping_complete(self, complete):
+        if complete:
+            # Re-enable the start button after scraping is complete
+            self.start_button.setEnabled(True)
+            self.start_button.setText("Start Scraping")
+            theme_mode, background_color, text_color, buttons_color, text_size, font_style = read_theme_settings("config.json")
+            self.start_button.setStyleSheet(f"color: {text_color}; background-color: {buttons_color};")
+      
+    def retailercurrent(self, retailer):
+        # Tells you real time what retailer is scraping from.
+        self.scraper_output.append(f"Retailer:{retailer}\n")
+        
+    def update_scraper_output_with_price(self, price):
+        # This method is called when a price is scraped
+        self.scraper_output.append(f"{price}")
+
     def stop_scraper(self):
             # Set scraping flag to False
             self.scraping = False
-               
-    def scrape_and_update_ui(self, browser_choice, product_name):
+
+
+
+class ScraperThread(QObject, threading.Thread):
+    scraping_complete = pyqtSignal(bool) 
+    price_scraped = pyqtSignal(str)
+    retailer_current = pyqtSignal(str)
+    
+    def __init__(self, browser_choice, product_name):
+        super().__init__()
+        self.browser_choice = browser_choice
+        self.product_name = product_name
+        self.scraper_output = QTextEdit()
+    def run(self):
+        self.scraping_complete.emit(False)
         try:
             # Call the initialize_driver function to create the WebDriver instance
-            driver = initialize_driver(browser_choice)
-       
+            driver = initialize_driver(self.browser_choice)
             if driver:
                 retailers = retailersFile()
                 # Define an empty dictionary to store the product prices and names
@@ -216,7 +249,7 @@ class MyApp(QMainWindow):
                     retailers = retailersFile()
                     webWaitTime = 4
                     # Construct the full search URL by appending the product name to the base URL
-                    search_url = retailers[retailer]['url'] + product_name
+                    search_url = retailers[retailer]['url'] + self.product_name
                     # Open the search URL using the chosen browser
                     driver.get(search_url)
                     # Wait for some time for the web page to load
@@ -224,7 +257,7 @@ class MyApp(QMainWindow):
                     # Parse the HTML source of the web page using BeautifulSoup
                     soup = BeautifulSoup(driver.page_source, 'html.parser')
                     print(f"Scraping: {retailer}")     
-                    
+                    self.retailer_current.emit(retailer)   
                     # Scrape the data for each retailer using different CSS selectors or XPath expressions
                     if retailer == 'Tesco':
                         try:
@@ -262,13 +295,16 @@ class MyApp(QMainWindow):
                                     if clubcard_price is not None:
                                         product_data[retailer] += (f"|Tile {index + 1} - Name: {name}, Price: {price} {pricePerMil}|{clubcard_price}\n")
                                     else:
-                                        product_data[retailer] += (f"|Tile {index + 1} - Name: {name}, Price: {price} {pricePerMil}|\n")
+                                        product_data[retailer] += (f"|Tile {retailer} {index + 1} - Name: {name}, Price: {price} {pricePerMil}|\n")
+                                      
                                 except Exception as e:
                                         print("Error parsing tile:", str(e))
                                     # Add an error handler or continue based on your needs
+                            
                         except Exception as e:
                             print(f"{retailer} error: {str(e)}")
-
+                        
+                        self.price_scraped.emit(product_data[retailer])
                     elif retailer == 'Asda':
                         try:
                             tiles = driver.find_elements(By.XPATH, '//li[@class=" co-item co-item--rest-in-shelf "]')[:retailers[retailer]['num_tiles_to_search']]
@@ -309,7 +345,8 @@ class MyApp(QMainWindow):
                             
                         except Exception as e:
                             print(f"{retailer} error: {str(e)}")
-                            
+                        # Code to allow it to update in real time.
+                        self.price_scraped.emit(product_data[retailer])        
                     elif retailer == 'B&M':
                         try:
                             tiles = driver.find_elements(By.XPATH, '//li[@class="col-6 col-landscape-4 mt-3 pt-lg-3 px-lg-3"]')[:retailers[retailer]['num_tiles_to_search']]
@@ -358,7 +395,8 @@ class MyApp(QMainWindow):
 
                         except Exception as e:
                                 print(f"{retailer} error: {str(e)}")
-                                
+                        # Code to allow it to update in real time.
+                        self.price_scraped.emit(product_data[retailer])     
                     elif retailer == 'Sainsburys':
                         try:
                             tiles1 = driver.find_elements(By.XPATH, '//li[@class= "pt-grid-item ln-o-grid__item ln-u-1/2@xs ln-u-1/3@sm ln-u-1/4@md ln-u-1/5@xl"]')[:retailers[retailer]['num_tiles_to_search']]
@@ -407,7 +445,8 @@ class MyApp(QMainWindow):
                                     print(f"{retailer} error: {str(e)}")
                         except Exception as e:
                                 print(f"{retailer} error: {str(e)}")
-                            
+                        # Code to allow it to update in real time.
+                        self.price_scraped.emit(product_data[retailer])    
                     elif retailer == 'Iceland':
                         try:
                             tiles = driver.find_elements(By.CLASS_NAME, 'grid-tile ')[:retailers[retailer]['num_tiles_to_search']]
@@ -439,7 +478,8 @@ class MyApp(QMainWindow):
                         
                         except Exception as e:
                             print(f"{retailer} error: {str(e)}")
-                            
+                        # Code to allow it to update in real time.
+                        self.price_scraped.emit(product_data[retailer])    
                     elif retailer == 'Poundshop':
                         try:
                             tiles = driver.find_elements(By.XPATH, '//li[@class= "rrp item product product-item"]')[:retailers[retailer]['num_tiles_to_search']]
@@ -477,7 +517,8 @@ class MyApp(QMainWindow):
                             
                         except Exception as e:
                             print(f"{retailer} error: {str(e)}")    
-
+                        # Code to allow it to update in real time.
+                        self.price_scraped.emit(product_data[retailer]) 
                     elif retailer == 'Poundland':
                         try:
                             tiles = driver.find_elements(By.XPATH, '//li[@class= " item product product-item c-product c-product__item"]')[:retailers[retailer]['num_tiles_to_search']]
@@ -507,6 +548,8 @@ class MyApp(QMainWindow):
                             
                         except Exception as e:
                             print(f"{retailer} error: {str(e)}")  
+                        # Code to allow it to update in real time.
+                        self.price_scraped.emit(product_data[retailer]) 
                     elif retailer == 'Aldi':
                         try:
                             tiles = driver.find_elements(By.XPATH, '//div[@data-qa="search-result"]')[:retailers[retailer]['num_tiles_to_search']]
@@ -526,7 +569,8 @@ class MyApp(QMainWindow):
                                         print(f"{retailer} error: {str(e)}")
                         except Exception as e:
                             print(f"{retailer} error: {str(e)}")
-                            
+                        # Code to allow it to update in real time.
+                        self.price_scraped.emit(product_data[retailer])     
                     elif retailer == 'Morrisons':
                         try:
                             tiles = driver.find_elements(By.XPATH, '//li[contains(@class, "fops-item") and contains(@class, "fops-item--on_offer") or contains (@class, "fops-item fops-item--cluster")]')[:retailers[retailer]['num_tiles_to_search']]
@@ -563,7 +607,7 @@ class MyApp(QMainWindow):
                                 except Exception as e:
                                     print(f"{retailer} error: {str(e)}")
                            
-                            
+                                
                         except Exception as e:
                             print(f"{retailer} error: {str(e)}")
         except WebDriverException as e:
@@ -573,15 +617,12 @@ class MyApp(QMainWindow):
         finally:
             # Set scraping flag to False when scraping is done
             self.scraping = False
+            self.scraping_complete.emit(True)
             if driver:
-                self.update_ui_with_data(product_data)
+                print("Scrape complete")
                 driver.quit()
-    
-    def update_ui_with_data(self, product_data):
-            # Update the UI with the scraped data
-            self.scraper_output.setPlainText("Scraped Data:\n")
-            for retailer, data in product_data.items():
-                self.scraper_output.append(f"Retailer: {retailer}\n{data}\n")  
+                
+                          
 def main():
     app = QApplication(sys.argv)
     window = MyApp()
