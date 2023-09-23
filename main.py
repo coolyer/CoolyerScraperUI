@@ -160,11 +160,11 @@ class MyApp(QMainWindow):
         self.firefox_radio.setStyleSheet(f"color: {text_color}; font-size: {text_size}; font-family: {font_style}")
         self.chrome_radio.setStyleSheet(f"color: {text_color}; font-size: {text_size}; font-family: {font_style}")
         self.edge_radio.setStyleSheet(f"color: {text_color}; font-size: {text_size}; font-family: {font_style}")
+        print("Themed Refreshed")
         
     def start_scraper(self, from_enter=False):
         # Get the selected browser choice
         browser_choice = self.browser_group.checkedId()
-        print("Original Button Palette:", self.original_button_palette)
         if browser_choice == -1:
             self.scraper_output.clear()
             self.scraper_output.append("Please choose a browser")
@@ -202,7 +202,7 @@ class MyApp(QMainWindow):
         self.scraper_thread.scraping_complete.connect(self.handle_scraping_complete)
         self.scraper_thread.start()
  
-      
+    # Checks if scraping is done.  
     def handle_scraping_complete(self, complete):
         if complete:
             # Re-enable the start button after scraping is complete
@@ -606,7 +606,7 @@ class ScraperThread(QObject, threading.Thread):
                                         product_data[retailer] += (f"|Tile {index + 1} - Name: {name} {weight}, Price: {price}|\n")
                                 except Exception as e:
                                     print(f"{retailer} error: {str(e)}")
-                           
+                            self.price_scraped.emit(product_data[retailer])       
                                 
                         except Exception as e:
                             print(f"{retailer} error: {str(e)}")
