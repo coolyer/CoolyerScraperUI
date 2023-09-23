@@ -7,7 +7,7 @@ Coolyer Scraper UI is a Python application that allows you to easily scrape prod
 
 -   Python 3.x
 -   Firefox, Chrome, or Edge browser (depending on your choice)
--   GeckoDriver for Firefox, ChromeDriver for Chrome, or EdgeDriver for Edge (automatically installed via `webdriver_manager`)
+-   GeckoDriver for Firefox, ChromeDriver for Chrome, or EdgeDriver for Edge (automatically installed if you have the browser already)
 -   PyQt5 library (installed via `requirements.txt`)
 
 ## Installation
