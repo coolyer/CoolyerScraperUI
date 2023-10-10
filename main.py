@@ -39,6 +39,7 @@ class MyApp(QMainWindow):
         self.init_ui()
         theme_mode, background_color, text_color, buttons_color, text_size, font_style = read_theme_settings("config.json")
 
+
         # Set background color for the entire application
         palette = QPalette()
         palette.setColor(QPalette.Window, QColor(background_color))
@@ -56,7 +57,7 @@ class MyApp(QMainWindow):
         self.edge_radio.setStyleSheet(f"color: {text_color}; font-size: {text_size}; font-family: {font_style}")
         self.original_button_palette = self.start_button.palette()
     def init_ui(self):
-        
+
         # MenuBar
         menubar = self.menuBar()
 
@@ -135,11 +136,13 @@ class MyApp(QMainWindow):
         self.start_button.clicked.connect(self.start_scraper)
         layout.addWidget(self.start_button)
 
-        # TODO Make this work when threading is implemented
         # Stop button
-        #self.stop_button = QPushButton('Stop')
-        #self.stop_button.clicked.connect(self.stop_scraper)
-        #layout.addWidget(self.stop_button)
+        self.stop_button = QPushButton('Not Scraping')
+        self.stop_button.clicked.connect(self.stop_scraper)
+        layout.addWidget(self.stop_button)
+        self.stop_button.setEnabled(False)
+        self.stop_button.setStyleSheet("background-color: #CCCCCC; color: #808080;")
+
 
         # Apply layout to central widget
         self.central_widget.setLayout(layout)
@@ -163,6 +166,7 @@ class MyApp(QMainWindow):
         print("Themed Refreshed")
         
     def start_scraper(self, from_enter=False):
+        theme_mode, background_color, text_color, buttons_color, text_size, font_style = read_theme_settings("config.json")
         # Get the selected browser choice
         browser_choice = self.browser_group.checkedId()
         if browser_choice == -1:
@@ -177,28 +181,33 @@ class MyApp(QMainWindow):
             self.scraper_output.append("Please enter a product name")
             return  # Exit the function if the product name is empty
         # Disable the start button while scraping is in progress
-        self.scraping = True
         self.start_button.setEnabled(False)
         self.start_button.setText("Scraping")
         self.start_button.setStyleSheet("background-color: #CCCCCC; color: #808080;")
+        # Stop button
+        self.stop_button.setEnabled(True)
+        self.stop_button.setText("Stop")
+        self.stop_button.setStyleSheet(f"color: {text_color}; background-color: {buttons_color};")
+
         # Get the product name from the input field
         product_name = self.product_input.text()
 
         # Clear the scraper output
         self.scraper_output.clear()
-        #self.show_freeze_warning()
-        
-        # Set scraping flag to True
         
         # Start the thread to allow it not to stop responding.
         self.scraper_thread = ScraperThread(browser_choice, product_name)
-        
+
+        # Set scraping flag to True
+        self.scraper_thread.scraping = True
+
         # The code to allow it to scrape in real time
         self.scraper_thread.price_scraped.connect(self.update_scraper_output_with_price)
-        
+
         # Calls what retailer its scraping
         self.scraper_thread.retailer_current.connect(self.retailercurrent)
-         # Connect the scraping completion signal to the handling method
+
+        # Connect the scraping completion signal to the handling method
         self.scraper_thread.scraping_complete.connect(self.handle_scraping_complete)
         self.scraper_thread.start()
  
@@ -220,8 +229,11 @@ class MyApp(QMainWindow):
         self.scraper_output.append(f"{price}")
 
     def stop_scraper(self):
-            # Set scraping flag to False
-            self.scraping = False
+            # Set scraping flag to False and stops scraping
+            self.scraper_thread.scraping = False
+            self.scraper_output.append("User stopped scraping process")
+            self.stop_button.setEnabled(False)
+            self.stop_button.setStyleSheet("background-color: #CCCCCC; color: #808080;")
 
 
 
@@ -235,8 +247,8 @@ class ScraperThread(QObject, threading.Thread):
         self.browser_choice = browser_choice
         self.product_name = product_name
         self.scraper_output = QTextEdit()
+        self.scraping = True
     def run(self):
-        self.scraping_complete.emit(False)
         try:
             # Call the initialize_driver function to create the WebDriver instance
             driver = initialize_driver(self.browser_choice)
@@ -258,6 +270,11 @@ class ScraperThread(QObject, threading.Thread):
                     soup = BeautifulSoup(driver.page_source, 'html.parser')
                     print(f"Scraping: {retailer}")     
                     self.retailer_current.emit(retailer)   
+                    # Stop the scraper when stop is pressed
+                    if self.scraping == False:
+                        self.scraping_complete.emit(True)
+                        print("Scrape complete")
+                        driver.quit()
                     # Scrape the data for each retailer using different CSS selectors or XPath expressions
                     if retailer == 'Tesco':
                         try:
@@ -606,10 +623,11 @@ class ScraperThread(QObject, threading.Thread):
                                         product_data[retailer] += (f"|Tile {index + 1} - Name: {name} {weight}, Price: {price}|\n")
                                 except Exception as e:
                                     print(f"{retailer} error: {str(e)}")
-                            self.price_scraped.emit(product_data[retailer])       
-                                
+                            self.price_scraped.emit(product_data[retailer])
                         except Exception as e:
                             print(f"{retailer} error: {str(e)}")
+            
+                                         
         except WebDriverException as e:
                 print(f"WebDriverException: {str(e)}")
         except Exception as e:
@@ -631,10 +649,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-       
-def main():
-    app = QApplication(sys.argv)
-    window = MyApp()
-    window.show()
-    sys.exit(app.exec_())
-    
