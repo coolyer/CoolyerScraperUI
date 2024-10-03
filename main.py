@@ -541,54 +541,16 @@ class ScraperThread(QObject, threading.Thread):
                                 print(f"{retailer} error: {str(e)}")
                         # Code to allow it to update in real time.
                         self.price_scraped.emit(product_data[retailer])    
-                    elif retailer == 'Poundshop':
-                        try:
-                            tiles = driver.find_elements(By.XPATH, '//li[@class= "rrp item product product-item"]')[:retailers[retailer]['num_tiles_to_search']]
-                            product_data[retailer] = ""
-                            for index, tile in enumerate(tiles):
-                                try:
-                                    price_element = WebDriverWait(driver, webWaitTime).until(
-                                    EC.visibility_of_element_located((By.CLASS_NAME, 'price'))
-                                    )
-                                    
-
-                                    item_name_element = tile.find_element(By.CLASS_NAME, 'product-item-link')
-                                    
-                                    try:
-                                        poundShopOffersStart_element = tile.find_element(By.CLASS_NAME, 'price')
-                                        poundShopOffersStart = poundShopOffersStart_element.text.strip()
-                                        poundShopOffersExtra_element = tile.find_element(By.CLASS_NAME, 'qty-label')
-                                        poundShopOffersExtra = poundShopOffersExtra_element.text.strip()
-                                        poundShopOffers = (f" {poundShopOffersStart} {poundShopOffersExtra}")
-                                    except NoSuchElementException:
-                                        poundShopOffers = None
-                                    
-                                    name = item_name_element.text.strip()
-                                    price_html = price_element.get_attribute('innerHTML')
-                                    soup = BeautifulSoup(price_html, 'html.parser')
-                                    price = soup.get_text(strip=True).replace("now", "")
-                                    
-                                    if poundShopOffers is not None:
-                                        product_data[retailer] += (f"|Tile {index + 1} - Name: {name}, Price: £{price}|{poundShopOffers}\n")
-                                    else:
-                                        product_data[retailer] += (f"|Tile {index + 1} - Name: {name}, Price: £{price}|\n")
-                                except Exception as e:
-                                        print(f"{retailer} error: {str(e)}")
-                                    # Add an error handler or continue based on your needs
-                            
-                        except Exception as e:
-                            print(f"{retailer} error: {str(e)}")    
-                        # Code to allow it to update in real time.
-                        self.price_scraped.emit(product_data[retailer]) 
+                    
                     elif retailer == 'Poundland':
                         try:
-                            tiles = driver.find_elements(By.XPATH, '//li[@class= " item product product-item c-product c-product__item"]')[:retailers[retailer]['num_tiles_to_search']]
+                            tiles = driver.find_elements(By.XPATH, '//li[contains(@class, "rrp item product product-item")]')[:retailers[retailer]['num_tiles_to_search']]
                             product_data[retailer] = ""
                             for index, tile in enumerate(tiles):
                                 try:
-                                    price_element = tile.find_elements(By.CLASS_NAME, 'c-product__price')
+                                    price_element = tile.find_elements(By.CLASS_NAME, 'price')
                                     price = price_element[0].text.strip()
-                                    item_name_element = tile.find_element(By.CLASS_NAME, 'c-product__title')
+                                    item_name_element = tile.find_element(By.CLASS_NAME, 'product-item-link')
                                     
                                     try:
                                         poundLandOffers_element = tile.find_element(By.CLASS_NAME, 'c-product__promo')
@@ -600,13 +562,13 @@ class ScraperThread(QObject, threading.Thread):
                                     name = item_name_element.text.strip()
                                     
                                     if poundLandOffers is not None:
-                                        product_data[retailer] += (f"|Tile {index + 1} - Name: {name}, Price: {price}|{poundLandOffers} each \n")
+                                        product_data[retailer] += (f"|Tile {index + 1} - Name: {name}, Price: £{price}|{poundLandOffers} each \n")
                                     else:
-                                        product_data[retailer] += (f"|Tile {index + 1} - Name: {name}, Price: {price}|\n")
+                                        product_data[retailer] += (f"|Tile {index + 1} - Name: {name}, Price: £{price}|\n")
+                                except NoSuchElementException as e:
+                                    print(f"Error finding elements for tile {index + 1}: {str(e)}")
                                 except Exception as e:
-                                        print(f"{retailer} error: {str(e)}")
-                                    # Add an error handler or continue based on your needs
-                            
+                                    print(f"Error processing tile {index + 1}: {str(e)}")
                         except Exception as e:
                             print(f"{retailer} error: {str(e)}")  
                         # Code to allow it to update in real time.
