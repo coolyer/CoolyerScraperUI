@@ -12,13 +12,14 @@ def initialize_driver(browser_choice):
         if browser_choice == 1:
             # Firefox
             options = webdriver.FirefoxOptions()
-            options.headless = True
+            options.add_argument('--headless=firefox')
             print("Starting Firefox")
             driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()), options=options)
         elif browser_choice == 2:
             # Chrome
             options = webdriver.ChromeOptions()
             options.add_argument('--headless=new')
+            print("Chrome is broken, please use Firefox or Edge")
             driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
         elif browser_choice == 3:
             # Microsoft Edge
