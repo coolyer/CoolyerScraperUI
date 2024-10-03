@@ -60,7 +60,7 @@
       },
       {
         "name": "Morrisons",
-        "url": "https://groceries.morrisons.com/search?entry=",
+        "url": "https://groceries.morrisons.com/search?q=",
         "enabled": true,
         "num_tiles_to_search": 10
       }
