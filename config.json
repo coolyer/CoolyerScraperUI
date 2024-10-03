@@ -40,12 +40,7 @@
         "enabled": true,
         "num_tiles_to_search": 10
       },
-      {
-        "name": "Poundshop",
-        "url": "https://www.poundshop.com/catalogsearch/result/?q=",
-        "enabled": true,
-        "num_tiles_to_search": 10
-      },
+
       {
         "name": "Poundland",
         "url": "https://www.poundland.co.uk/catalogsearch/result/?q=",
