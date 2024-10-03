@@ -604,7 +604,7 @@ class ScraperThread(QObject, threading.Thread):
                                     #print(f"Processing tile {index + 1}/{len(tiles)}")
                                     name_element = tile.find_element(By.XPATH, './/h3[@data-test="fop-title"]')
                                     price_element = tile.find_elements(By.XPATH, './/span[@data-test="fop-price"]')
-                                    #price_element1 = tile.find_elements(By.XPATH, './/div[@data-test = "fop-offer-text"]')
+                                    amount_element = tile.find_elements(By.XPATH, './/div[@data-test="fop-size"]/span[@class="_text_f6lbl_1 _text--m_f6lbl_23 sc-1sjeki5-0 bUHwDh"]')
                                     price = ""
                                     if price_element:
                                         price = price_element[0].text.strip()
@@ -613,22 +613,27 @@ class ScraperThread(QObject, threading.Thread):
                                     
                                     # Extract the product name and price
                                     name = name_element.text.strip()
+                                    
+                                    if amount_element:
+                                        amount = amount_element[0].text.strip()
                                     try:
                                     # Check if there's a promotional offer
                                         promo_element = tile.find_element(By.XPATH, './/span[@data-test = "fop-offer-text"]')
                                         promo = promo_element.text.strip()
                                     except NoSuchElementException:
                                         promo = None
+
                                     try:
-                                        weight_element = tile.find_element(By.XPATH, './/span[@data-test="fop-price-per-unit"]')
-                                        weight = weight_element.text.strip()
+                                        pricePerMil_element = tile.find_element(By.XPATH, './/span[@data-test="fop-price-per-unit"]')
+                                        pricePerMil = pricePerMil_element.text.strip()
+                                        
                                     except NoSuchElementException:
-                                        weight = None
+                                        pricePerMil = None
                                     # Add the extracted data to product_data
                                     if promo:
-                                        product_data[retailer] += (f"|Tile {index + 1} - Name: {name} {weight}, Price: {price}|{promo}\n")
+                                        product_data[retailer] += (f"|Tile {index + 1} - Name: {name} {amount} {pricePerMil}, Price: {price}|{promo}\n")
                                     else:
-                                        product_data[retailer] += (f"|Tile {index + 1} - Name: {name} {weight}, Price: {price}|\n")
+                                        product_data[retailer] += (f"|Tile {index + 1} - Name: {name} {amount} {pricePerMil}, Price: {price}|\n")
                                 except NoSuchElementException as e:
                                     print(f"Error finding elements for tile {index + 1}: {str(e)}")
                                 except Exception as e:
