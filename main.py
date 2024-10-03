@@ -256,6 +256,11 @@ class ScraperThread(QObject, threading.Thread):
                 retailers = retailersFile()
                 # Define an empty dictionary to store the product prices and names
                 product_data = {}
+                
+                # Define an empty dictionary to store the cheapest prices and names WIP #TODO
+                #cheapest_prices = {}
+                
+                
                 # Loop through each retailer and their search URL
                 for retailer, url in retailers.items():
                     retailers = retailersFile()
@@ -278,23 +283,27 @@ class ScraperThread(QObject, threading.Thread):
                     # Scrape the data for each retailer using different CSS selectors or XPath expressions
                     if retailer == 'Tesco':
                         try:
-                            tiles = driver.find_elements(By.XPATH, '//li[@class="product-list--list-item"]')[:retailers[retailer]['num_tiles_to_search']]
+                            tiles = driver.find_elements(By.XPATH, '//li[@class="LD7hL"]')[:retailers[retailer]['num_tiles_to_search']]
                             product_data[retailer] = ''
+                            #min_price = float('inf')
+                            #min_price_tile = None
                             for index, tile in enumerate(tiles):
                                 try:
                                     price_element = WebDriverWait(tile, webWaitTime).until(
-                                        EC.visibility_of_element_located((By.CLASS_NAME, 'beans-price__text'))
+                                       EC.visibility_of_element_located((By.XPATH, './/p[contains(@class, "text__StyledText-sc-1jpzi8m-0") and contains(@class, "gyHOWz") and contains(@class, "ddsweb-text") and contains(@class, "styled__PriceText-sc-v0qv7n-1") and contains(@class, "cXlRF")]'))
                                     )
+                                    
 
                                     item_name_element = WebDriverWait(tile, webWaitTime).until(
-                                    EC.visibility_of_element_located((
-                                                    By.XPATH,
-                                                    './/span[@class= "styled__Text-sc-1i711qa-1 xZAYu ddsweb-link__text"]')))
+                                    EC.visibility_of_element_located((By.XPATH, './/span[contains(@class, "styled__Text-sc-1i711qa-1") and contains(@class, "bsLJsh") and contains(@class, "ddsweb-link__text")]'))
+                                    )
+                                    
 
                                     pricePerMil_element = WebDriverWait(tile, webWaitTime).until(
-                                    EC.visibility_of_element_located((By.CSS_SELECTOR, '.styled__StyledFootnote-sc-119w3hf-7.icrlVF.styled__Subtext-sc-8qlq5b-2.bNJmdc.beans-price__subtext')))
+                                    EC.visibility_of_element_located((By.XPATH, './/p[contains(@class, "text__StyledText-sc-1jpzi8m-0") and contains(@class, "kiGrpI") and contains(@class, "ddsweb-text") and contains(@class, "styled__Subtext-sc-v0qv7n-2") and contains(@class, "kLkheV") and contains(@class, "ddsweb-price__subtext")]'))
+                                    )
                                     try:
-                                        clubcard_price_element = tile.find_element(By.XPATH, './/span[contains(@class, "offer-text")]')
+                                        clubcard_price_element = tile.find_element(By.XPATH, './/p[contains(@class, "text__StyledText-sc-1jpzi8m-0") and contains(@class, "gljcji") and contains(@class, "ddsweb-text") and contains(@class, "styled__ContentText-sc-1d7lp92-8") and contains(@class, "kjLZec") and contains(@class, "ddsweb-value-bar__content-text")]')
                                         clubcard_price = clubcard_price_element.text.strip()
                                     except NoSuchElementException:
                                         clubcard_price = None
@@ -309,23 +318,48 @@ class ScraperThread(QObject, threading.Thread):
                                     soup = BeautifulSoup(price_html, 'html.parser')
                                     price = soup.get_text(strip=True)
                                     pricePerMil = pricePerMil_element.text.strip()
+                                    # Convert price to a float for comparison
+                                    #price_value = float(price.replace('£', '').replace(',', ''))
+
+                                    # Update the minimum price if the current price is lower WIP
+                                    '''
+                                    if price_value < min_price:
+                                        min_price = price_value
+                                        min_price_tile = {
+                                            'name': name,
+                                            'price': price,
+                                            'price_per_mil': pricePerMil,
+                                            'clubcard_price': clubcard_price
+                                        }
+                                        '''
                                     if clubcard_price is not None:
                                         product_data[retailer] += (f"|Tile {index + 1} - Name: {name}, Price: {price} {pricePerMil}|{clubcard_price}\n")
                                     else:
-                                        product_data[retailer] += (f"|Tile {retailer} {index + 1} - Name: {name}, Price: {price} {pricePerMil}|\n")
-                                      
-                                except Exception as e:
-                                        print("Error parsing tile:", str(e))
-                                    # Add an error handler or continue based on your needs
-                            
+                                        product_data[retailer] += (f"|Tile  {index + 1} - Name: {name}, Price: {price} {pricePerMil}|\n")
+                                except Exception as tile_exception:
+                                        print(f"Error processing tile {index + 1}: {str(tile_exception)}")
+                            # Part of the cheapest price WIP 
+                            '''
+                            if min_price_tile:
+                                print(f"Cheapest price for {retailer}: {min_price_tile['price']} for {min_price_tile['name']}")
+                                cheapest_prices[retailer] = min_price_tile
+                            '''
+                        # Error handler           
                         except Exception as e:
-                            print(f"{retailer} error: {str(e)}")
+                            print("Error parsing tile:", str(e))
+                            
                         
                         self.price_scraped.emit(product_data[retailer])
+                        
+                        #cheapest_prices_summary = "\n".join([f"{retailer}: {data['price']} for {data['name']}" for retailer, data in cheapest_prices.items()])
+                        #self.price_scraped.emit(cheapest_prices_summary)
+                        
                     elif retailer == 'Asda':
                         try:
                             tiles = driver.find_elements(By.XPATH, '//li[@class=" co-item co-item--rest-in-shelf "]')[:retailers[retailer]['num_tiles_to_search']]
                             product_data[retailer] = ""
+                            #min_price = float('inf')
+                            #min_price_tile = None
                             for index, tile in enumerate(tiles):
                                 try:
                                     price_element = WebDriverWait(tile, webWaitTime).until(
@@ -351,19 +385,23 @@ class ScraperThread(QObject, threading.Thread):
                                     price_html = price_element.get_attribute('innerHTML')
                                     soup = BeautifulSoup(price_html, 'html.parser')
                                     price = soup.get_text(strip=True).replace("now", "")
-                                    
+                                   
+                                   
                                     if Asdalitres is not None:
                                         product_data[retailer] += (f"|Tile {index + 1} - Name: {name} {Asdalitres}, Price: {price}|{deal_info}\n")
                                     else:
                                         product_data[retailer] += (f"|Tile {index + 1} - Name: {name}, Price: {price}|{deal_info}\n")
                                 except Exception as e:
                                         print(f"{retailer} error: {str(e)}")
-                                    # Add an error handler or continue based on your needs
+                                    
+                            
                             
                         except Exception as e:
                             print(f"{retailer} error: {str(e)}")
                         # Code to allow it to update in real time.
-                        self.price_scraped.emit(product_data[retailer])        
+                        self.price_scraped.emit(product_data[retailer])   
+                         
+                        
                     elif retailer == 'B&M':
                         try:
                             tiles = driver.find_elements(By.XPATH, '//li[@class="col-6 col-landscape-4 mt-3 pt-lg-3 px-lg-3"]')[:retailers[retailer]['num_tiles_to_search']]
@@ -466,35 +504,41 @@ class ScraperThread(QObject, threading.Thread):
                         self.price_scraped.emit(product_data[retailer])    
                     elif retailer == 'Iceland':
                         try:
-                            tiles = driver.find_elements(By.CLASS_NAME, 'grid-tile ')[:retailers[retailer]['num_tiles_to_search']]
+                            tiles = driver.find_elements(By.XPATH, './/div[@data-test-selector="product-list-item"]')[:retailers[retailer]['num_tiles_to_search']]
                             product_data[retailer] = ""
                             for index, tile in enumerate(tiles):
                                 try:
-                                    price_elements = tile.find_elements(By.XPATH, './/span[@class="product-sales-price"]/span')
+                                    price_elements = tile.find_elements(By.XPATH, './/span[contains(@class, "_105qcvc3w3") and contains(@class, "_105qcvc3wl") and contains(@class, "_105qcvc3xo")]')
                                     price = price_elements[0].text.strip()
                                     
 
-                                    item_name_element = tile.find_element(By.CLASS_NAME, 'name-link')
+                                    item_name_element = tile.find_element(By.XPATH, './/a[@data-test-selector="product-list-item-name"]')
+                                    
+                                    pricePerUnit_element = tile.find_element(By.XPATH, './/p[contains(@class, "_105qcvc3w3")]')
                                     
                                     try:
-                                        iceLandOffers_element = tile.find_element(By.CLASS_NAME, 'price')
-                                        iceLandOffers = iceLandOffers_element.text.strip()
-                                        
+                                        iceLandOffers_element = tile.find_element(By.XPATH, './/div[contains(@class, "_105qcvcu9") and contains(@class, "_105qcvcwu") and contains(@class, "_105qcvcxc")]')
+                                        offer_spans = iceLandOffers_element.find_elements(By.XPATH, './/span[contains(@class, "_105qcvc3w3")]')
+                                        iceLandOffers = " ".join([span.text.strip() for span in offer_spans])
+                                        # Remove duplicate "each" if present
+                                        iceLandOffers = iceLandOffers.replace(" each each", " each")
                                     except NoSuchElementException:
                                         iceLandOffers = None
                                     
                                     name = item_name_element.text.strip()
+                                    pricePerMil = pricePerUnit_element.text.strip()
                                     
                                     
                                     if iceLandOffers is not None:
-                                        product_data[retailer] += (f"|Tile {index + 1} - Name: {name}, Price: {price}|Multibuy Price: {iceLandOffers} each \n")
+                                        product_data[retailer] += (f"|Tile {index + 1} - Name: {name}, Price: {price} ({pricePerMil}) |Multibuy Price: {iceLandOffers} each \n")
                                     else:
-                                        product_data[retailer] += (f"|Tile {index + 1} - Name: {name}, Price: {price}|\n")
+                                        product_data[retailer] += (f"|Tile {index + 1} - Name: {name}, Price: {price} ({pricePerMil})|\n")
+                                except NoSuchElementException as e:
+                                    print(f"Error finding elements for tile {index + 1}: {str(e)}")
                                 except Exception as e:
-                                        pass # There is a list index out of range error but shows all the correct prices and products so no idea.
-                        
+                                    print(f"Error processing tile {index + 1}: {str(e)}")
                         except Exception as e:
-                            print(f"{retailer} error: {str(e)}")
+                                print(f"{retailer} error: {str(e)}")
                         # Code to allow it to update in real time.
                         self.price_scraped.emit(product_data[retailer])    
                     elif retailer == 'Poundshop':
@@ -590,29 +634,31 @@ class ScraperThread(QObject, threading.Thread):
                         self.price_scraped.emit(product_data[retailer])     
                     elif retailer == 'Morrisons':
                         try:
-                            tiles = driver.find_elements(By.XPATH, '//li[contains(@class, "fops-item") and contains(@class, "fops-item--on_offer") or contains (@class, "fops-item fops-item--cluster")]')[:retailers[retailer]['num_tiles_to_search']]
+                            tiles = driver.find_elements(By.XPATH, '//div[contains(@class, "sc-filq44-0") and contains(@class, "cZSNQJ")]')[:retailers[retailer]['num_tiles_to_search']]
+                            #print(f"Found {len(tiles)} tiles for {retailer}")
                             product_data[retailer] = ""
                             for index, tile in enumerate(tiles):
                                 try:
-                                    name_element = tile.find_element(By.XPATH, './/div[@class ="fop-description"]/h4[@class="fop-title"]')
-                                    price_element = tile.find_elements(By.XPATH, './/div[@class = "price-group-wrapper"]/span[@class="fop-price"]')
-                                    price_element1 = tile.find_elements(By.XPATH, './/div[@class = "price-group-wrapper"]/span[@class ="fop-price price-offer"]')
+                                    #print(f"Processing tile {index + 1}/{len(tiles)}")
+                                    name_element = tile.find_element(By.XPATH, './/h3[@data-test="fop-title"]')
+                                    price_element = tile.find_elements(By.XPATH, './/span[@data-test="fop-price"]')
+                                    #price_element1 = tile.find_elements(By.XPATH, './/div[@data-test = "fop-offer-text"]')
                                     price = ""
                                     if price_element:
                                         price = price_element[0].text.strip()
+                                       # print(f"Price found: {price}")
                                     
-                                    elif price_element1:
-                                        price = price_element1[0].text.strip()
+                                    
                                     # Extract the product name and price
                                     name = name_element.text.strip()
                                     try:
                                     # Check if there's a promotional offer
-                                        promo_element = tile.find_element(By.XPATH, './/a[@class="fop-row-promo promotion-offer"]/span')
+                                        promo_element = tile.find_element(By.XPATH, './/span[@data-test = "fop-offer-text"]')
                                         promo = promo_element.text.strip()
                                     except NoSuchElementException:
                                         promo = None
                                     try:
-                                        weight_element = tile.find_element(By.XPATH, './/span[@class="fop-catch-weight"]')
+                                        weight_element = tile.find_element(By.XPATH, './/span[@data-test="fop-price-per-unit"]')
                                         weight = weight_element.text.strip()
                                     except NoSuchElementException:
                                         weight = None
@@ -621,8 +667,10 @@ class ScraperThread(QObject, threading.Thread):
                                         product_data[retailer] += (f"|Tile {index + 1} - Name: {name} {weight}, Price: {price}|{promo}\n")
                                     else:
                                         product_data[retailer] += (f"|Tile {index + 1} - Name: {name} {weight}, Price: {price}|\n")
+                                except NoSuchElementException as e:
+                                    print(f"Error finding elements for tile {index + 1}: {str(e)}")
                                 except Exception as e:
-                                    print(f"{retailer} error: {str(e)}")
+                                    print(f"Error processing tile {index + 1}: {str(e)}")
                             self.price_scraped.emit(product_data[retailer])
                         except Exception as e:
                             print(f"{retailer} error: {str(e)}")
