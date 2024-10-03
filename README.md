@@ -60,7 +60,6 @@ The script supports scraping from the following retailers:
 -   B&M
 -   Sainsburys
 -   Poundland
--   Poundshop
 -   Morrisons
 -   Aldi
 
